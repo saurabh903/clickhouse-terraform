@@ -13,11 +13,11 @@ resource "aws_vpc" "this" {
 
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "clickhouse-igw" }
+  tags = { Name = "clickhouse-igw" }
 }
 
 # ----------------------
-# Subnets (2 AZs)
+# Subnets
 # ----------------------
 resource "aws_subnet" "public" {
   count                   = 2
@@ -28,10 +28,9 @@ resource "aws_subnet" "public" {
   tags = { Name = "clickhouse-public-${count.index}" }
 }
 
-# Route Table for public subnets
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "clickhouse-public-rt" }
+  tags = { Name = "clickhouse-public-rt" }
 }
 
 resource "aws_route" "internet" {
@@ -49,8 +48,6 @@ resource "aws_route_table_association" "public_assoc" {
 # ----------------------
 # Security Groups
 # ----------------------
-
-# ALB SG - allow from anywhere on 8123
 resource "aws_security_group" "alb_sg" {
   vpc_id = aws_vpc.this.id
   name   = "alb-sg"
@@ -70,12 +67,10 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# EC2 SG - allow HTTP from ALB and SSH from your IP
 resource "aws_security_group" "ec2_sg" {
   vpc_id = aws_vpc.this.id
   name   = "ec2-sg"
 
-  # Allow traffic from ALB on port 8123
   ingress {
     from_port       = 8123
     to_port         = 8123
@@ -83,12 +78,12 @@ resource "aws_security_group" "ec2_sg" {
     security_groups = [aws_security_group.alb_sg.id]
   }
 
-  # Allow SSH from your IP (replace YOUR_PUBLIC_IP with your actual IP)
+  # SSH access only if my_ip is set
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["YOUR_PUBLIC_IP/32"]
+    cidr_blocks = var.my_ip != "" ? [format("%s/32", var.my_ip)] : []
   }
 
   egress {
