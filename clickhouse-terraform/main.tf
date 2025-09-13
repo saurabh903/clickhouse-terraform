@@ -13,7 +13,7 @@ resource "aws_vpc" "this" {
 
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
-  tags = { Name = "clickhouse-igw" }
+  tags   = { Name = "clickhouse-igw" }
 }
 
 # ----------------------
@@ -28,10 +28,9 @@ resource "aws_subnet" "public" {
   tags = { Name = "clickhouse-public-${count.index}" }
 }
 
-# Route Table for public subnets
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
-  tags = { Name = "clickhouse-public-rt" }
+  tags   = { Name = "clickhouse-public-rt" }
 }
 
 resource "aws_route" "internet" {
@@ -75,7 +74,6 @@ resource "aws_security_group" "ec2_sg" {
   vpc_id = aws_vpc.this.id
   name   = "ec2-sg"
 
-  # Allow traffic from ALB on port 8123
   ingress {
     from_port       = 8123
     to_port         = 8123
@@ -83,12 +81,11 @@ resource "aws_security_group" "ec2_sg" {
     security_groups = [aws_security_group.alb_sg.id]
   }
 
-  # Allow SSH from your IP (replace YOUR_PUBLIC_IP with your actual IP)
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["YOUR_PUBLIC_IP/32"]
+    cidr_blocks = [var.my_ip] # <-- Pass your IP via variable
   }
 
   egress {
@@ -103,16 +100,18 @@ resource "aws_security_group" "ec2_sg" {
 # EC2 Instances
 # ----------------------
 resource "aws_instance" "clickhouse" {
-  count         = 2
-  ami           = var.ami
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.public[count.index].id
-  key_name      = var.key_name
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  count                       = 2
+  ami                         = var.ami
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.public[count.index].id
+  associate_public_ip_address = true
+  key_name                    = var.key_name
+  vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
 
   tags = {
-    Name = "clickhouse-${count.index}"
-    role = "Clickhouse"
+    Name          = "clickhouse-${count.index}"
+    role          = "Clickhouse"
+    ansible_group = "clickhouse" # helpful for ansible inventory grouping
   }
 }
 
@@ -127,10 +126,11 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "this" {
-  name     = "clickhouse-tg"
-  port     = 8123
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.this.id
+  name        = "clickhouse-tg"
+  port        = 8123
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.this.id
+  target_type = "instance"
 }
 
 resource "aws_lb_listener" "this" {
@@ -149,4 +149,15 @@ resource "aws_lb_target_group_attachment" "attach" {
   target_group_arn = aws_lb_target_group.this.arn
   target_id        = aws_instance.clickhouse[count.index].id
   port             = 8123
+}
+
+# ----------------------
+# Outputs
+# ----------------------
+output "clickhouse_instance_ips" {
+  value = aws_instance.clickhouse[*].public_ip
+}
+
+output "alb_dns_name" {
+  value = aws_lb.this.dns_name
 }
