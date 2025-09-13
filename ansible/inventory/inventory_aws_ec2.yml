@@ -1,0 +1,12 @@
+# aws_ec2.yml
+
+plugin: aws_ec2
+regions:
+  - us-east-1
+filters:
+  tag:Role: Clickhouse
+keyed_groups:
+  - key: tags.Name
+    prefix: tag_role
+hostnames:
+  - public-ip-address

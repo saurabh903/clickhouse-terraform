@@ -1,0 +1,53 @@
+# -----------------------
+# Terraform
+# -----------------------
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+terraform.rc
+
+# -----------------------
+# Ansible
+# -----------------------
+# Ignore local inventory files or secrets
+inventory.ini
+*.retry
+*.vault
+
+# -----------------------
+# OS / Editor / IDE
+# -----------------------
+# MacOS
+.DS_Store
+
+# Linux
+*.swp
+*~
+
+# VS Code
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# -----------------------
+# Logs and temporary files
+# -----------------------
+*.log
+*.bak
+*.tmp
+
+# -----------------------
+# Python (if used)
+# -----------------------
+__pycache__/
+*.pyc

@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  author: saurabh
+  description: Install and configure ClickHouse (Ubuntu & CentOS)
+  platforms:
+    - name: Ubuntu
+    - name: CentOS
+  license: MIT
+dependencies: []
+

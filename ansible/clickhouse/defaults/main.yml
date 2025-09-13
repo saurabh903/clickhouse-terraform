@@ -1,0 +1,4 @@
+---
+
+clickhouse_version: "24.4.2.1808"
+clickhouse_package_url_ubuntu: "https://packages.clickhouse.com/deb/pool/main/c/clickhouse/clickhouse-server_{{ clickhouse_version }}_all.deb"
